@@ -1,0 +1,28 @@
+/* Ajustes mínimos */
+
+:root {
+    color-scheme: light dark;
+}
+
+body {
+    background: var(--bs-body-bg);
+}
+
+
+/* Imágenes de tarjeta con corte uniforme */
+
+.card-img-top.fit-cover {
+    height: 180px;
+    object-fit: cover;
+}
+
+
+/* Mejoras pequeñas */
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
