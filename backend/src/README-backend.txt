@@ -1,0 +1,1 @@
+Instala dependencias: cd backend && npm i && npm run dev
