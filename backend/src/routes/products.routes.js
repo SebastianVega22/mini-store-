@@ -1,5 +1,9 @@
-const router = require('express').Router();
-const ctrl = require('../controllers/products.controller');
+import { Router } from 'express';
+import * as ctrl from '../controllers/products.controller.js';
+
+const router = Router();
+
 router.get('/', ctrl.list);
 router.get('/:sku', ctrl.getBySku);
-module.exports = router;
+
+export default router;

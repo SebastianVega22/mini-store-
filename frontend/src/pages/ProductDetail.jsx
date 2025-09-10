@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { http } from "../services/http";
 import { formatPrice } from "../utils/formatPrice";
-import { useCartStore } from "../store/cart";
+import { useCartStore } from "../store/cart.store";
 
 // Helpers locales para imagen (con placeholder si falla/no existe)
 const resolveImage = (p, size = "800/600") => {

@@ -1,24 +1,59 @@
+// frontend/src/components/CartDrawer.jsx
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
-import { useCartStore } from "../store/cart";
+import { Link, useNavigate } from "react-router-dom";
+import { useCartStore } from "../store/cart.store";
 import { formatPrice } from "../utils/formatPrice";
 
-// Placeholder si la imagen falla o no existe
 const fallbackThumb = (sku) =>
   `https://picsum.photos/seed/${encodeURIComponent(sku || "product")}/64/48`;
 
 export default function CartDrawer() {
-  // Suscripciones separadas para evitar objetos nuevos por render
+  const navigate = useNavigate();
+
+  // Store (objeto { [sku]: item })
   const items  = useCartStore((s) => s.items);
   const setQty = useCartStore((s) => s.setQty);
   const remove = useCartStore((s) => s.remove);
   const clear  = useCartStore((s) => s.clear);
 
   const list = useMemo(() => Object.values(items), [items]);
-  const total = useMemo(
-    () => list.reduce((a, i) => a + i.qty * i.price, 0),
-    [list]
-  );
+  const total = useMemo(() => list.reduce((a, i) => a + i.qty * i.price, 0), [list]);
+
+  const goCheckout = (e) => {
+    e.preventDefault();
+    if (!list.length) return;
+
+    const el = document.getElementById("cartDrawer");
+    const hasBS = !!window.bootstrap?.Offcanvas;
+    console.log("[CartDrawer] goCheckout -> hasBS:", hasBS, "el:", !!el);
+
+    // Si existe Bootstrap JS: cerramos con la API y esperamos el evento "hidden"
+    if (el && hasBS) {
+      const off = window.bootstrap.Offcanvas.getOrCreateInstance(el);
+
+      const onHidden = () => {
+        console.log("[CartDrawer] hidden.bs.offcanvas -> navigate('/checkout')");
+        el.removeEventListener("hidden.bs.offcanvas", onHidden);
+        navigate("/checkout");
+      };
+      el.addEventListener("hidden.bs.offcanvas", onHidden, { once: true });
+
+      console.log("[CartDrawer] calling off.hide()");
+      off.hide();
+      return;
+    }
+
+    // Fallback: por si no está bootstrap bundle
+    if (el?.classList.contains("show")) {
+      console.log("[CartDrawer] Fallback: removing 'show' and backdrop");
+      el.classList.remove("show");
+      document.querySelector(".offcanvas-backdrop")?.remove();
+      document.body.classList.remove("offcanvas-backdrop", "modal-open");
+    }
+
+    console.log("[CartDrawer] Fallback navigate('/checkout')");
+    navigate("/checkout");
+  };
 
   return (
     <div
@@ -29,7 +64,12 @@ export default function CartDrawer() {
     >
       <div className="offcanvas-header">
         <h5 id="cartDrawerLabel" className="mb-0">Tu carrito</h5>
-        <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+        <button
+          type="button"
+          className="btn-close"
+          data-bs-dismiss="offcanvas"
+          aria-label="Cerrar"
+        />
       </div>
 
       <div className="offcanvas-body d-flex flex-column">
@@ -64,7 +104,12 @@ export default function CartDrawer() {
                   onChange={(e) => setQty(i.sku, Math.max(1, Number(e.target.value) || 1))}
                 />
 
-                <button className="btn btn-sm btn-outline-danger" onClick={() => remove(i.sku)} aria-label="Quitar">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => remove(i.sku)}
+                  aria-label="Quitar"
+                >
                   <i className="bi bi-trash" />
                 </button>
               </li>
@@ -79,12 +124,19 @@ export default function CartDrawer() {
           </div>
 
           <div className="d-flex gap-2 mt-3">
-            <button className="btn btn-outline-secondary w-50" onClick={clear} disabled={list.length === 0}>
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-50"
+              onClick={clear}
+              disabled={list.length === 0}
+            >
               Vaciar
             </button>
+
             <button
+              type="button"
               className="btn btn-primary w-50"
-              onClick={() => { clear(); alert("Compra simulada ✅ ¡Gracias!"); }}
+              onClick={goCheckout}
               disabled={list.length === 0}
             >
               Finalizar

@@ -1,8 +1,12 @@
-const mongoose = require('mongoose');
-const { MONGO_URI } = require('./env');
+import mongoose from 'mongoose';
 
-async function connectMongo() {
-  await mongoose.connect(MONGO_URI);
-  console.log('MongoDB connected');
+export async function connectDB() {
+    const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mini_store';
+    await mongoose.connect(uri);
+    const { host, name } = mongoose.connection;
+    console.log(`MongoDB connected ${host} db: ${name}`);
 }
-module.exports = { connectMongo };
+
+export async function disconnectDB() {
+    await mongoose.disconnect();
+}

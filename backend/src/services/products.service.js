@@ -1,24 +1,32 @@
-const Product = require('../models/Product.model');
+import Product from '../models/Product.js';
 
-async function list({ search, category, sort = 'name', order = 'asc', page = 1, limit = 12 }) {
-  const query = {};
-  if (search) query.name = { $regex: search, $options: 'i' };
-  if (category) query.category = category;
+export async function list({
+    page = 1,
+    limit = 12,
+    search,
+    category,
+    sort = 'price',
+    order = 'asc',
+}) {
+    const q = {};
+    if (search) q.name = { $regex: search, $options: 'i' };
+    if (category && category !== 'Todos') q.category = category;
 
-  const sortObj = {};
-  sortObj[sort] = order === 'desc' ? -1 : 1;
-  const skip = (Number(page) - 1) * Number(limit);
+    const sortSpec = {
+        [sort]: order === 'desc' ? -1 : 1 };
 
-  const [items, total] = await Promise.all([
-    Product.find(query).sort(sortObj).skip(skip).limit(Number(limit)),
-    Product.countDocuments(query)
-  ]);
+    const [items, total] = await Promise.all([
+        Product.find(q)
+        .sort(sortSpec)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+        Product.countDocuments(q),
+    ]);
 
-  return { items, page: Number(page), total, pageSize: Number(limit) };
+    return { items, total, page, pageSize: limit };
 }
 
-async function getBySku(sku) {
-  return Product.findOne({ sku });
+export async function getBySku(sku) {
+    return Product.findOne({ sku }).lean();
 }
-
-module.exports = { list, getBySku };

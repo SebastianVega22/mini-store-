@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
 import { formatPrice } from "../utils/formatPrice";
-import { useCartStore } from "../store/cart";
+import { useCartStore } from "../store/cart.store";
 // Helpers locales para resolver imagen y fallback
 const resolveImage = (p, size = "400/300") => {
   const first = p?.images?.[0];

@@ -1,12 +1,10 @@
-const svc = require('../services/orders.service');
+import * as svc from "../services/orders.service.js";
 
-async function create(req, res, next) {
-  try {
-    const result = await svc.create(req.body || {});
-    res.status(201).json(result);
-  } catch (e) {
-    next(e);
-  }
+export async function create(req, res, next) {
+    try {
+        const result = await svc.create(req.body || {});
+        res.status(201).json(result);
+    } catch (e) {
+        next(e);
+    }
 }
-
-module.exports = { create };
