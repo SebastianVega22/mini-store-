@@ -1,16 +1,16 @@
-/**
- * validate(schema) => middleware que valida req.body/query/params con Zod
- * schema: { body?, query?, params? }
- */
-module.exports = function validate(schema) {
-  return (req, res, next) => {
-    try {
-      if (schema?.body) req.body = schema.body.parse(req.body);
-      if (schema?.query) req.query = schema.query.parse(req.query);
-      if (schema?.params) req.params = schema.params.parse(req.params);
-      next();
-    } catch (e) {
-      res.status(422).json({ errors: e.errors || [{ message: 'Invalid data' }] });
-    }
-  };
-};
+import { AppError } from "./error.js";
+
+/* Aplica un schema de Zod sobre req[source] */
+export const validate =
+    (schema, source = "query") =>
+    (req, _res, next) => {
+        const parsed = schema.safeParse(req[source]);
+        if (!parsed.success) {
+            const e = new AppError(400, "Validación fallida", { issues: parsed.error.issues });
+            e.name = "ZodError";
+            e.issues = parsed.error.issues;
+            return next(e);
+        }
+        req[source] = parsed.data;
+        next();
+    };

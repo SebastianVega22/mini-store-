@@ -1,28 +1,64 @@
-/* Ajustes mínimos */
-
 :root {
-    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #111827;
+    --muted: #6b7280;
+    --card-bg: #ffffff;
+    --border: #e5e7eb;
 }
 
+:root[data-theme="dark"] {
+    --bg: #0b0f14;
+    --fg: #e5e7eb;
+    --muted: #9ca3af;
+    --card-bg: #10161d;
+    --border: #1f2937;
+}
+
+
+/* Aplica variables a elementos base (suavemente sobre Bootstrap) */
+
+html,
 body {
-    background: var(--bs-body-bg);
+    background: var(--bg);
+    color: var(--fg);
+}
+
+.card,
+.list-group-item,
+.offcanvas,
+.dropdown-menu,
+.modal-content {
+    background-color: var(--card-bg);
+    color: var(--fg);
+    border-color: var(--border);
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+    background-color: var(--card-bg);
+    color: var(--fg);
+    border-color: var(--border);
+}
+
+.text-body-secondary,
+.text-muted {
+    color: var(--muted) !important;
 }
 
 
-/* Imágenes de tarjeta con corte uniforme */
+/* (opcional) imagen de tarjeta consistente ya lo tienes; dejo recordatorio: */
 
-.card-img-top.fit-cover {
-    height: 180px;
+.card-img-top {
+    height: 220px;
     object-fit: cover;
 }
 
 
-/* Mejoras pequeñas */
+/* Permite que los form controls respeten dark mode autocomplete en Chrome */
 
-a {
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
+input,
+select,
+textarea {
+    color-scheme: light dark;
 }
