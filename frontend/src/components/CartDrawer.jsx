@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cart.store";
 import { formatPrice } from "../utils/formatPrice";
+import { resolveImage } from "../utils/resolveImage";
 
 const fallbackThumb = (sku) =>
   `https://picsum.photos/seed/${encodeURIComponent(sku || "product")}/64/48`;
@@ -10,7 +11,6 @@ const fallbackThumb = (sku) =>
 export default function CartDrawer() {
   const navigate = useNavigate();
 
-  // Store (objeto { [sku]: item })
   const items  = useCartStore((s) => s.items);
   const setQty = useCartStore((s) => s.setQty);
   const remove = useCartStore((s) => s.remove);
@@ -25,33 +25,23 @@ export default function CartDrawer() {
 
     const el = document.getElementById("cartDrawer");
     const hasBS = !!window.bootstrap?.Offcanvas;
-    console.log("[CartDrawer] goCheckout -> hasBS:", hasBS, "el:", !!el);
 
-    // Si existe Bootstrap JS: cerramos con la API y esperamos el evento "hidden"
     if (el && hasBS) {
       const off = window.bootstrap.Offcanvas.getOrCreateInstance(el);
-
       const onHidden = () => {
-        console.log("[CartDrawer] hidden.bs.offcanvas -> navigate('/checkout')");
         el.removeEventListener("hidden.bs.offcanvas", onHidden);
         navigate("/checkout");
       };
       el.addEventListener("hidden.bs.offcanvas", onHidden, { once: true });
-
-      console.log("[CartDrawer] calling off.hide()");
       off.hide();
       return;
     }
 
-    // Fallback: por si no está bootstrap bundle
     if (el?.classList.contains("show")) {
-      console.log("[CartDrawer] Fallback: removing 'show' and backdrop");
       el.classList.remove("show");
       document.querySelector(".offcanvas-backdrop")?.remove();
       document.body.classList.remove("offcanvas-backdrop", "modal-open");
     }
-
-    console.log("[CartDrawer] Fallback navigate('/checkout')");
     navigate("/checkout");
   };
 
@@ -80,7 +70,7 @@ export default function CartDrawer() {
             {list.map((i) => (
               <li key={i.sku} className="list-group-item d-flex gap-3 align-items-center">
                 <img
-                  src={i.image || fallbackThumb(i.sku)}
+                  src={resolveImage(i.image)}
                   onError={(e) => { e.currentTarget.src = fallbackThumb(i.sku); }}
                   alt={i.name}
                   width="64"

@@ -1,11 +1,17 @@
-export function resolveImage(p, size = "800x600") {
-    const first = p ? .images ? .[0];
-    if (!first) return `https://picsum.photos/seed/${encodeURIComponent(p?.sku || "product")}/${size}`;
-    if (first.startsWith("http")) return first;
-    // Si es relativo (ej. "/img/x200-1.jpg"), lo dejamos como está:
-    return first;
-}
+// frontend/src/utils/resolveImage.js
+export function resolveImage(src) {
+    // Fallback bonito si no hay imagen
+    const FALLBACK = "https://picsum.photos/seed/prod/800/600";
 
-export function fallbackImage(p, size = "800x600") {
-    return `https://picsum.photos/seed/${encodeURIComponent(p?.sku || "product")}/${size}`;
+    if (!src) return FALLBACK;
+
+    // Si ya es absoluta, úsala tal cual
+    if (/^https?:\/\//i.test(src)) return src;
+
+    // Prefija con el host del backend
+    const base = (
+        import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+    const path = String(src).replace(/^\//, ""); // sin doble slash
+
+    return `${base}/${path}`;
 }

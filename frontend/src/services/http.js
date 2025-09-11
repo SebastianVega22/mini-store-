@@ -1,9 +1,10 @@
 // frontend/src/services/http.js
 import axios from "axios";
 
-const baseURL =
-    import.meta.env.VITE_API_URL || "/api"; // fallback a /api por si usas proxy de Vite
+const API_ORIGIN = (
+    import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+
 export const http = axios.create({
-    baseURL,
-    timeout: 12000,
+    baseURL: `${API_ORIGIN}/api`, // 👈 prefijo /api aquí
+    headers: { "Content-Type": "application/json" },
 });

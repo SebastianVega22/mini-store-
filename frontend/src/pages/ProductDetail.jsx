@@ -1,18 +1,13 @@
+// frontend/src/pages/ProductDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { http } from "../services/http";
 import { formatPrice } from "../utils/formatPrice";
 import { useCartStore } from "../store/cart.store";
+import { resolveImage } from "../utils/resolveImage"; // 👈 Usa el util que ya prefija el backend
 
-// Helpers locales para imagen (con placeholder si falla/no existe)
-const resolveImage = (p, size = "800/600") => {
-  const first = p?.images?.[0];
-  if (!first) return `https://picsum.photos/seed/${encodeURIComponent(p?.sku || "product")}/${size}`;
-  return first.startsWith("http") ? first : first; // si viene como "/img/..." lo dejamos
-};
-const onImgError = (p, size = "800/600") => (e) => {
-  e.currentTarget.src = `https://picsum.photos/seed/${encodeURIComponent(p?.sku || "product")}/${size}`;
-};
+const FALLBACK = (seed) =>
+  `https://picsum.photos/seed/${encodeURIComponent(seed || "product")}/800/600`;
 
 export default function ProductDetail() {
   const { sku } = useParams();
@@ -41,7 +36,9 @@ export default function ProductDetail() {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [sku]);
 
   if (loading) return <div className="py-5 text-center">Cargando…</div>;
@@ -50,45 +47,58 @@ export default function ProductDetail() {
     return (
       <div className="py-5 text-center">
         <p className="text-danger">{err || "Producto no encontrado."}</p>
-        <Link to="/" className="btn btn-outline-secondary">Volver al catálogo</Link>
+        <Link to="/" className="btn btn-outline-secondary">
+          Volver al catálogo
+        </Link>
       </div>
     );
   }
 
-  const maxStock = typeof p.stock === "number" && p.stock > 0 ? p.stock : undefined;
+  const maxStock = typeof p.stock === "number" && p.stock > 0 ? p.stock : 0;
 
   const clamp = (n) => {
-    if (!maxStock) return Math.max(1, Math.floor(n || 1));
-    return Math.min(maxStock, Math.max(1, Math.floor(n || 1)));
+    const v = Math.max(1, Math.floor(n || 1));
+    return maxStock ? Math.min(maxStock, v) : v;
   };
 
   const handleAddQty = () => {
+    if (maxStock === 0) return;
     add(p, clamp(qty));
   };
 
   const handleAddOne = () => {
+    if (maxStock === 0) return;
     add(p, 1);
+  };
+
+  const imgSrc = resolveImage(p.images?.[0]); // 👈 Esto soporta http(s) y rutas relativas
+  const onImgError = (e) => {
+    e.currentTarget.src = FALLBACK(p?.sku);
+    e.currentTarget.onerror = null;
   };
 
   return (
     <div className="row g-4">
       <div className="col-md-6">
-        <img
-          className="img-fluid rounded-3 border"
-          src={resolveImage(p)}
-          onError={onImgError(p)}
-          alt={p.name}
-          width="800"
-          height="600"
-          loading="lazy"
-          decoding="async"
-        />
+        {/* Marco con proporción fija para consistencia visual */}
+        <div className="ratio ratio-4x3 rounded-3 border overflow-hidden">
+          <img
+            src={imgSrc}
+            onError={onImgError}
+            alt={p.name}
+            loading="lazy"
+            decoding="async"
+            className="w-100 h-100 object-fit-cover"
+          />
+        </div>
       </div>
 
       <div className="col-md-6">
         <div className="card shadow-sm">
           <div className="card-body">
-            <Link to="/" className="small text-decoration-underline">← Volver</Link>
+            <Link to="/" className="small text-decoration-underline">
+              ← Volver
+            </Link>
 
             <h1 className="h3 fw-bold mt-2">{p.name}</h1>
             {p.category && <div className="text-body-secondary">{p.category}</div>}
@@ -100,12 +110,11 @@ export default function ProductDetail() {
             <dl className="row small text-body-secondary mt-2 mb-3">
               <dt className="col-sm-3">SKU</dt>
               <dd className="col-sm-9">{p.sku}</dd>
-              {typeof p.stock === "number" && (
-                <>
-                  <dt className="col-sm-3">Stock</dt>
-                  <dd className="col-sm-9">{p.stock}</dd>
-                </>
-              )}
+
+              <dt className="col-sm-3">Stock</dt>
+              <dd className="col-sm-9">
+                {maxStock > 0 ? maxStock : <span className="text-danger">Sin stock</span>}
+              </dd>
             </dl>
 
             {/* Controles de cantidad + acciones */}
@@ -116,6 +125,7 @@ export default function ProductDetail() {
                   type="button"
                   onClick={() => setQty((n) => clamp(n - 1))}
                   aria-label="Disminuir"
+                  disabled={maxStock === 0}
                 >
                   <i className="bi bi-dash-lg"></i>
                 </button>
@@ -123,29 +133,40 @@ export default function ProductDetail() {
                   className="form-control text-center"
                   type="number"
                   min={1}
-                  max={maxStock ?? undefined}
+                  max={maxStock || undefined}
                   value={qty}
                   onChange={(e) => setQty(clamp(Number(e.target.value)))}
+                  disabled={maxStock === 0}
                 />
                 <button
                   className="btn btn-outline-secondary"
                   type="button"
                   onClick={() => setQty((n) => clamp(n + 1))}
                   aria-label="Aumentar"
+                  disabled={maxStock === 0}
                 >
                   <i className="bi bi-plus-lg"></i>
                 </button>
               </div>
 
-              <button onClick={handleAddOne} className="btn btn-outline-primary" title="Agregar +1 al carrito">
+              <button
+                onClick={handleAddOne}
+                className="btn btn-outline-primary"
+                title="Agregar +1 al carrito"
+                disabled={maxStock === 0}
+              >
                 <i className="bi bi-plus-lg me-1" />
                 1
               </button>
             </div>
 
-            <button onClick={handleAddQty} className="btn btn-primary w-100 mt-3">
+            <button
+              onClick={handleAddQty}
+              className="btn btn-primary w-100 mt-3"
+              disabled={maxStock === 0}
+            >
               <i className="bi bi-cart-plus me-2" />
-              Agregar {qty} al carrito
+              {maxStock === 0 ? "Sin stock" : `Agregar ${qty} al carrito`}
             </button>
           </div>
         </div>

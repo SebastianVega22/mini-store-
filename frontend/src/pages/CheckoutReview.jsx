@@ -5,22 +5,26 @@ import { useCartStore } from "../store/cart.store";
 import { useCheckoutStore } from "../store/checkout.store";
 import { createOrder } from "../services/orders.service";
 import { formatPrice } from "../utils/formatPrice";
+import { resolveImage } from "../utils/resolveImage";
+
+const fallbackThumb = (sku) =>
+  `https://picsum.photos/seed/${encodeURIComponent(sku || "product")}/56/56`;
 
 export default function CheckoutReview() {
   const navigate = useNavigate();
 
-  // 1) Suscripción estable: solo al OBJETO items del store
-  const itemsObj = useCartStore((s) => s.items);
-  const clearCart = useCartStore((s) => s.clear);
+  // 1) Suscripción estable al objeto items del store
+  const itemsObj   = useCartStore((s) => s.items);
+  const clearCart  = useCartStore((s) => s.clear);
 
-  // 2) Derivar datos con useMemo (NO en el selector del store)
-  const list = useMemo(() => Object.values(itemsObj), [itemsObj]);
+  // 2) Derivar datos de items
+  const list     = useMemo(() => Object.values(itemsObj), [itemsObj]);
   const hasItems = useMemo(() => Object.keys(itemsObj).length > 0, [itemsObj]);
 
-  // 3) Shipping: leemos el objeto, pero derivamos booleano estable
-  const shipping = useCheckoutStore((s) => s.shipping);
+  // 3) Shipping del checkout
+  const shipping      = useCheckoutStore((s) => s.shipping);
   const resetCheckout = useCheckoutStore((s) => s.reset);
-  const hasShipping = useMemo(
+  const hasShipping   = useMemo(
     () =>
       Boolean(
         shipping?.fullName &&
@@ -30,33 +34,19 @@ export default function CheckoutReview() {
     [shipping]
   );
 
-  // 4) Guards de navegación: dependen SOLO de booleanos/valores primitivos
-  useEffect(() => {
-    if (!hasItems) navigate("/");
-  }, [hasItems, navigate]);
-
-  useEffect(() => {
-    if (hasItems && !hasShipping) navigate("/checkout");
-  }, [hasItems, hasShipping, navigate]);
+  // 4) Guards de navegación
+  useEffect(() => { if (!hasItems) navigate("/"); }, [hasItems, navigate]);
+  useEffect(() => { if (hasItems && !hasShipping) navigate("/checkout"); }, [hasItems, hasShipping, navigate]);
 
   // 5) Totales
-  const taxRate = Number(import.meta.env.VITE_TAX_RATE || 0);
-  const subtotal = useMemo(
-    () => list.reduce((a, i) => a + i.price * i.qty, 0),
-    [list]
-  );
-  const taxes = useMemo(
-    () => Math.round(subtotal * taxRate * 100) / 100,
-    [subtotal, taxRate]
-  );
-  const total = useMemo(
-    () => Math.round((subtotal + taxes) * 100) / 100,
-    [subtotal, taxes]
-  );
+  const taxRate  = Number(import.meta.env.VITE_TAX_RATE ?? 0.19); // default 19% si no hay env
+  const subtotal = useMemo(() => list.reduce((a, i) => a + i.price * i.qty, 0), [list]);
+  const taxes    = useMemo(() => Math.round(subtotal * taxRate * 100) / 100, [subtotal, taxRate]);
+  const total    = useMemo(() => Math.round((subtotal + taxes) * 100) / 100, [subtotal, taxes]);
 
   // 6) Confirmar
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
 
   const confirm = useCallback(async () => {
     try {
@@ -65,11 +55,7 @@ export default function CheckoutReview() {
 
       const payload = {
         items: list.map(({ sku, name, price, qty, image }) => ({
-          sku,
-          name,
-          price,
-          qty,
-          image,
+          sku, name, price, qty, image,
         })),
         shipping,
       };
@@ -94,6 +80,7 @@ export default function CheckoutReview() {
       <h2 className="mb-3">Revisión de pedido</h2>
 
       <div className="row g-4">
+        {/* Lista de artículos */}
         <div className="col-md-7">
           <div className="card">
             <div className="card-header">Artículos</div>
@@ -101,11 +88,12 @@ export default function CheckoutReview() {
               {list.map((it) => (
                 <li key={it.sku} className="list-group-item d-flex align-items-center gap-3">
                   <img
-                    src={it.image || `https://picsum.photos/seed/${encodeURIComponent(it.sku)}/56/56`}
+                    src={resolveImage(it.image)}
+                    onError={(e) => { e.currentTarget.src = fallbackThumb(it.sku); }}
                     width={56}
                     height={56}
                     alt={it.name}
-                    style={{ objectFit: "cover" }}
+                    className="rounded border object-fit-cover"
                   />
                   <div className="flex-grow-1">
                     <div className="fw-semibold">{it.name}</div>
@@ -120,6 +108,7 @@ export default function CheckoutReview() {
           </div>
         </div>
 
+        {/* Envío + Totales */}
         <div className="col-md-5">
           <div className="card mb-3">
             <div className="card-header">Envío</div>
