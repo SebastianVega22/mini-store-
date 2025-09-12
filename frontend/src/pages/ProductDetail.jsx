@@ -4,7 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { http } from "../services/http";
 import { formatPrice } from "../utils/formatPrice";
 import { useCartStore } from "../store/cart.store";
-import { resolveImage } from "../utils/resolveImage"; // 👈 Usa el util que ya prefija el backend
+import { resolveImage } from "../utils/resolveImage";
 
 const FALLBACK = (seed) =>
   `https://picsum.photos/seed/${encodeURIComponent(seed || "product")}/800/600`;
@@ -20,22 +20,34 @@ export default function ProductDetail() {
 
   useEffect(() => {
     let alive = true;
+
     (async () => {
       setLoading(true);
       setErr(null);
       try {
-        const { data } = await http.get(`/products/${sku}`);
+        // 👇 Encodeamos el SKU por seguridad (espacios/caracteres especiales)
+        const safeSku = encodeURIComponent(String(sku || "").trim());
+        const { data } = await http.get(`/products/${safeSku}`);
         if (alive) {
           setP(data);
           setQty(1);
         }
       } catch (e) {
-        console.error(e);
-        if (alive) setErr("No se pudo cargar el producto.");
+        console.error("Error cargando producto:", e);
+        if (!alive) return;
+
+        // Mensaje de error más específico
+        const status = e?.response?.status;
+        if (status === 404) {
+          setErr("Producto no encontrado.");
+        } else {
+          setErr("No se pudo cargar el producto.");
+        }
       } finally {
         if (alive) setLoading(false);
       }
     })();
+
     return () => {
       alive = false;
     };
@@ -59,7 +71,7 @@ export default function ProductDetail() {
   const clamp = (n) => {
     const v = Math.max(1, Math.floor(n || 1));
     return maxStock ? Math.min(maxStock, v) : v;
-  };
+    };
 
   const handleAddQty = () => {
     if (maxStock === 0) return;
@@ -71,7 +83,7 @@ export default function ProductDetail() {
     add(p, 1);
   };
 
-  const imgSrc = resolveImage(p.images?.[0]); // 👈 Esto soporta http(s) y rutas relativas
+  const imgSrc = resolveImage(p.images?.[0]);
   const onImgError = (e) => {
     e.currentTarget.src = FALLBACK(p?.sku);
     e.currentTarget.onerror = null;
@@ -80,7 +92,6 @@ export default function ProductDetail() {
   return (
     <div className="row g-4">
       <div className="col-md-6">
-        {/* Marco con proporción fija para consistencia visual */}
         <div className="ratio ratio-4x3 rounded-3 border overflow-hidden">
           <img
             src={imgSrc}
@@ -117,7 +128,6 @@ export default function ProductDetail() {
               </dd>
             </dl>
 
-            {/* Controles de cantidad + acciones */}
             <div className="d-flex align-items-center gap-2">
               <div className="input-group" style={{ maxWidth: 180 }}>
                 <button

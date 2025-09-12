@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 
 import productsRoutes from "./routes/products.routes.js";
 import ordersRoutes from "./routes/orders.routes.js";
+import adminProductsRoutes from "./routes/admin.products.routes.js"; // 👈 NUEVO
+import { requireAdmin } from "./middlewares/requireAdmin.js";
 import { connectDB } from "./config/db.js";
 
 const __filename = fileURLToPath(
@@ -30,9 +32,11 @@ app.use(
 );
 
 /* ── CORS ──────────────────────────────────────────────────── */
-const allowlist = (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
+const allowlist = (
+        process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173"
+    )
     .split(",")
-    .map(s => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 
 app.use(
@@ -56,10 +60,15 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/products", productsRoutes);
 app.use("/api/orders", ordersRoutes);
 
+// 👇 NUEVO: Mini Admin (CRUD de productos protegido)
+app.use("/api/admin/products", requireAdmin, adminProductsRoutes);
+
 /* ── Errores (Zod + CORS) ──────────────────────────────────── */
 app.use((err, _req, res, _next) => {
     if (err.name === "ZodError") {
-        return res.status(400).json({ message: "Validación fallida", issues: err.issues });
+        return res
+            .status(400)
+            .json({ message: "Validación fallida", issues: err.issues });
     }
     if (String(err.message || "").includes("CORS")) {
         return res.status(403).json({ message: err.message });
@@ -74,7 +83,14 @@ connectDB().then(() => {
         console.log(`API on http://localhost:${PORT}`);
         console.log(`Static dir: ${PUBLIC_DIR}`);
         console.log(`CORS allowlist: ${allowlist.join(", ")}`);
-        console.log(`Ejemplo imagen: http://localhost:${PORT}/public/productos/sku-015.jpg`);
+        console.log(
+            `Ejemplo imagen: http://localhost:${PORT}/public/productos/sku-015.jpg`
+        );
+        if (!process.env.ADMIN_TOKEN) {
+            console.warn(
+                "[WARN] ADMIN_TOKEN no está definido. Las rutas /api/admin/products responderán 503."
+            );
+        }
     });
 });
 export default app;

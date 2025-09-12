@@ -6,7 +6,6 @@ import CartDrawer from "./CartDrawer";
 function getInitialTheme() {
   const saved = localStorage.getItem("theme");
   if (saved === "dark" || saved === "light") return saved;
-  // Respeta el prefers-color-scheme del SO
   const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
   return prefersDark ? "dark" : "light";
 }
@@ -41,6 +40,7 @@ export default function Layout() {
 
           <div id="mainNav" className="collapse navbar-collapse">
             <ul className="navbar-nav ms-auto align-items-center gap-2">
+              {/* Botón modo claro/oscuro */}
               <li className="nav-item">
                 <button
                   type="button"
@@ -53,10 +53,24 @@ export default function Layout() {
                 </button>
               </li>
 
+              {/* Botón Admin */}
+              <li className="nav-item">
+                <Link
+                  to="/admin"
+                  className="btn btn-outline-primary"
+                  aria-label="Abrir panel de administración"
+                  title="Admin"
+                >
+                  <i className="bi bi-gear me-1" /> Admin
+                </Link>
+              </li>
+
+              {/* Carrito */}
               <li className="nav-item d-flex">
                 <CartButton />
               </li>
 
+              {/* GitHub */}
               <li className="nav-item">
                 <a
                   className="nav-link"
