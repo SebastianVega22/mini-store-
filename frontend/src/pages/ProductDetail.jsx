@@ -92,16 +92,17 @@ export default function ProductDetail() {
   return (
     <div className="row g-4">
       <div className="col-md-6">
-        <div className="ratio ratio-4x3 rounded-3 border overflow-hidden">
-          <img
-            src={imgSrc}
-            onError={onImgError}
-            alt={p.name}
-            loading="lazy"
-            decoding="async"
-            className="w-100 h-100 object-fit-cover"
-          />
-        </div>
+        <div className="product-image-wrapper ratio ratio-4x3">
+  <img
+    src={imgSrc}
+    onError={onImgError}
+    alt={p.name}
+    loading="lazy"
+    decoding="async"
+    className="w-100 h-100"
+  />
+</div>
+
       </div>
 
       <div className="col-md-6">

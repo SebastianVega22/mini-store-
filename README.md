@@ -1,8 +1,30 @@
-# Mini Store (Full-Stack simple)
-Monorepo mínimo con frontend (React) y backend (Express + MongoDB).
-- Frontend: /frontend (se inicializa luego con Vite)
-- Backend: /backend (ya incluye app base y rutas)
+# MiniStore
 
-Pasos rápidos:
-1) cd backend && npm i && npm run dev
-2) En otra terminal: inicializa Vite en /frontend (ver sección Frontend).
+Tienda demo (Node/Express + React + Vite + MongoDB).
+
+
+## Requisitos
+- Node 18+
+- MongoDB
+
+## Variables de entorno
+- backend/.env
+  - PORT=4000
+  - MONGO_URL=...
+  - ADMIN_TOKEN=...
+  - CORS_ORIGINS=http://localhost:5173
+- frontend/.env
+  - VITE_API_URL=http://localhost:4000
+  - VITE_ADMIN_TOKEN=...
+
+## Desarrollo
+```bash
+# backend
+cd backend
+npm i
+npm run dev
+
+# frontend
+cd ../frontend
+npm i
+npm run dev
